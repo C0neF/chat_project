@@ -1,36 +1,163 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 现代聊天界面
 
-## Getting Started
+这是一个基于 Next.js 的现代聊天界面，采用 Bento Grid 设计风格，居中显示的简洁聊天对话区域。
 
-First, run the development server:
+## ✨ 特性
+
+- 🎨 **Bento Grid 设计风格** - 现代化的圆角卡片设计，灵感来自日式便当盒设计
+- 📱 **响应式设计** - 完美适配移动端和桌面端
+- 🎭 **流畅动画** - 使用 Framer Motion 实现丰富的交互动画
+- 🌙 **深色模式** - 完整的深色/浅色主题系统，支持手动切换和系统跟随
+- 🎯 **Material Icons** - 使用 Material Design 图标系统
+- ⚡ **现代技术栈** - Next.js 15 + React 19 + TailwindCSS 4
+- 🎯 **居中布局** - 聊天区域居中显示，专注于对话体验
+- 🏠 **房间系统** - 支持创建和加入聊天房间
+- 🔢 **智能房间号** - 公开房间6位数字，加密房间4位数字
+- 🔓 **公开房间** - 6位数字房间号，任何知道房间号的人都可以加入
+- 🔐 **加密房间** - 4位数字房间号，密码保护，额外的安全层
+- 🤖 **自动识别** - 根据房间号位数自动判断房间类型
+- 🌐 **WebRTC P2P 通信** - 基于 Trystero 的点对点实时聊天
+- 🔒 **端到端加密** - 消息在传输过程中自动加密
+- 🚫 **无服务器架构** - 去中心化通信，无需中央服务器
+- 👥 **多用户支持** - 支持多人同时在线聊天
+- 📊 **实时状态显示** - 显示连接状态和在线用户数量
+- 🎨 **主题切换** - 右上角主题切换按钮，支持浅色/深色模式和系统跟随
+
+## 🛠️ 技术栈
+
+- **框架**: Next.js 15.3.3
+- **UI 库**: React 19
+- **样式**: TailwindCSS 4.1.8
+- **动画**: Framer Motion 12.16.0
+- **图标**: Material Icons (@mui/icons-material 7.1.1)
+- **WebRTC**: Trystero 0.21.4
+- **语言**: TypeScript 5.8.3
+
+## 🚀 快速开始
+
+首先，运行开发服务器：
 
 ```bash
 npm run dev
-# or
+# 或
 yarn dev
-# or
+# 或
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+在浏览器中打开 [http://localhost:3000](http://localhost:3000) 查看结果。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📱 界面特性
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 前置界面
+- **欢迎屏幕**: 精美的前置界面，提供创建和加入房间选项
+- **房间管理**: 支持创建新房间或通过房间号加入现有房间
+- **流畅过渡**: 界面切换使用 Framer Motion 动画效果
 
-## Learn More
+### 聊天界面
+- **居中布局**: 聊天区域在页面中央，专注于对话体验
+- **房间信息**: 聊天头部显示当前房间号
+- **返回功能**: 可随时返回欢迎界面选择其他房间
 
-To learn more about Next.js, take a look at the following resources:
+### 响应式适配
+- **桌面端**: 最大宽度限制，居中显示，优雅的大屏体验
+- **移动端**: 全屏适配，触摸友好的交互设计
+- **统一体验**: 所有设备上保持一致的设计语言
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎨 设计亮点
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **圆角卡片**: 所有界面元素都采用圆角设计，营造温和友好的视觉感受
+- **渐变背景**: 使用微妙的渐变色彩，增加视觉层次感
+- **阴影效果**: 适度的阴影营造立体感和深度
+- **动画过渡**: 所有交互都有流畅的动画过渡效果
+- **色彩系统**: 统一的蓝色主题色，支持深色模式
 
-## Deploy on Vercel
+## 📁 项目结构
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── globals.css      # 全局样式和主题变量
+│   ├── layout.tsx       # 根布局和主题提供者
+│   └── page.tsx         # 主页面
+├── components/
+│   ├── ChatContainer.tsx # 聊天容器组件（主要组件）
+│   ├── WelcomeScreen.tsx # 欢迎界面组件
+│   ├── JoinRoomModal.tsx # 加入房间弹窗组件
+│   ├── CreateRoomModal.tsx # 创建房间弹窗组件
+│   ├── EncryptedRoomModal.tsx # 加密房间设置弹窗组件
+│   ├── MessageList.tsx  # 消息列表组件
+│   ├── Message.tsx      # 单个消息组件
+│   ├── MessageInput.tsx # 消息输入组件
+│   └── ThemeToggle.tsx  # 主题切换按钮组件
+├── contexts/
+│   └── ThemeContext.tsx # 主题上下文和状态管理
+├── hooks/
+│   └── useTheme.ts      # 主题相关的自定义 Hook
+└── services/
+    └── webrtcChat.ts    # WebRTC 聊天服务
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔧 开发说明
+
+这个项目展示了如何使用现代前端技术栈创建一个功能完整的聊天应用。包含房间系统、界面切换和优雅的用户体验设计。
+
+### 主要组件说明
+
+- **ChatContainer**: 主容器，管理聊天状态、房间状态和界面切换
+- **WelcomeScreen**: 欢迎界面，提供创建和加入房间的入口
+- **JoinRoomModal**: 加入房间弹窗，支持房间号输入和验证
+- **MessageList**: 消息列表，自动滚动到底部，支持空状态显示
+- **Message**: 单个消息气泡，支持用户和AI消息的不同样式
+- **MessageInput**: 消息输入框，支持多行文本和快捷键发送
+- **ThemeToggle**: 主题切换按钮，支持浅色/深色模式切换和动画效果
+
+### 房间系统
+
+- **智能房间号**: 公开房间6位数字，加密房间4位数字
+- **自动识别**: 根据房间号位数自动判断房间类型
+- **公开房间**: 6位数字房间号（如：123456），任何人都可加入
+- **加密房间**: 4位数字房间号（如：1234），需要密码保护
+- **房间加入**: 输入房间号，系统自动识别类型并要求密码
+- **房间验证**: 支持4位和6位数字房间号格式
+- **房间显示**: 在聊天头部显示当前房间号和房间类型
+
+### WebRTC 实时通信
+
+- **P2P 连接**: 使用 Trystero 建立点对点连接，无需中央服务器
+- **自动加密**: 所有消息在传输过程中自动端到端加密
+- **实时同步**: 消息实时传输，支持多用户同时在线
+- **连接状态**: 实时显示连接状态（连接中/已连接/断开）
+- **用户管理**: 自动检测用户加入和离开，显示在线人数
+- **消息历史**: 新用户加入时自动同步历史消息
+- **网络适应**: 自动适应不同网络环境，支持 NAT 穿透
+
+### 加密与安全
+
+- **双重加密**: WebRTC 自动端到端加密 + 可选的密码保护
+- **密码保护**: 加密房间需要密码才能加入，增强隐私保护
+- **AES-GCM 加密**: 使用 AES-GCM 算法加密会话描述信息
+- **无服务器存储**: 密码和消息都不会存储在任何服务器上
+- **临时性**: 房间关闭后所有数据自动清除
+- **匿名性**: 无需注册账号，自动生成临时用户名
+
+### 主题系统
+
+- **完整主题支持**: 支持浅色模式、深色模式和系统跟随三种主题模式
+- **智能切换**: 右上角主题切换按钮，点击在浅色和深色模式间切换
+- **系统跟随**: 默认跟随系统主题设置，自动适应用户偏好
+- **状态持久化**: 用户选择的主题会保存到 localStorage，刷新后保持
+- **平滑过渡**: 主题切换时所有元素都有 300ms 的平滑过渡动画
+- **Material Icons**: 使用 Material Design 的 LightMode 和 DarkMode 图标
+- **Framer Motion**: 按钮切换时有旋转和缩放动画效果
+- **无障碍性**: 支持键盘导航（Enter/Space）和 aria-label
+- **SSR 兼容**: 避免服务端和客户端主题不一致的闪烁问题
+- **全组件覆盖**: 所有界面组件都完整支持深色模式
+
+## 📄 许可证
+
+MIT License
+
+---
+
+*这个项目展示了现代前端技术栈的最佳实践，包括响应式设计、动画效果和组件化开发。*
