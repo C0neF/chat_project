@@ -2,19 +2,15 @@
 
 import { useEffect, useRef } from 'react';
 import Message from './Message';
-
-interface MessageType {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
+import FileMessage from './FileMessage';
+import { ChatMessage } from '../services/webrtcChat';
 
 interface MessageListProps {
-  messages: MessageType[];
+  messages: ChatMessage[];
+  onDownloadFile: (magnetURI: string, fileName: string) => Promise<void>;
 }
 
-export default function MessageList({ messages }: MessageListProps) {
+export default function MessageList({ messages, onDownloadFile }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -35,15 +31,24 @@ export default function MessageList({ messages }: MessageListProps) {
           </div>
         </div>
       ) : (
-        messages.map((message) => (
-          <Message
-            key={message.id}
-            id={message.id}
-            content={message.content}
-            isUser={message.isUser}
-            timestamp={message.timestamp}
-          />
-        ))
+        messages.map((message) => {
+          if (message.type === 'file') {
+            return (
+              <FileMessage
+                key={message.id}
+                message={message}
+                onDownload={onDownloadFile}
+              />
+            );
+          } else {
+            return (
+              <Message
+                key={message.id}
+                message={message}
+              />
+            );
+          }
+        })
       )}
       <div ref={messagesEndRef} />
     </div>

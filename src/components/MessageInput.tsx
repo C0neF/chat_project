@@ -7,11 +7,13 @@ import AddIcon from '@mui/icons-material/Add';
 
 interface MessageInputProps {
   onSendMessage: (message: string) => void;
+  onSendFile: (file: File) => void;
   disabled?: boolean;
 }
 
-export default function MessageInput({ onSendMessage, disabled = false }: MessageInputProps) {
+export default function MessageInput({ onSendMessage, onSendFile, disabled = false }: MessageInputProps) {
   const [message, setMessage] = useState('');
+  const [isFileUploading, setIsFileUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,21 +33,34 @@ export default function MessageInput({ onSendMessage, disabled = false }: Messag
 
   // 处理文件选择按钮点击
   const handleFileButtonClick = () => {
-    if (!disabled && fileInputRef.current) {
+    if (!disabled && !isFileUploading && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
   // 处理文件选择
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      // 这里暂时只是打印文件信息，具体功能后续添加
-      console.log('选择的文件:', Array.from(files).map(file => ({
-        name: file.name,
-        size: file.size,
-        type: file.type
-      })));
+    if (files && files.length > 0 && !isFileUploading) {
+      // 发送第一个选择的文件
+      const file = files[0];
+
+      // 检查文件大小（限制为 100MB）
+      const maxSize = 100 * 1024 * 1024; // 100MB
+      if (file.size > maxSize) {
+        alert('文件大小不能超过 100MB');
+        e.target.value = '';
+        return;
+      }
+
+      setIsFileUploading(true);
+      try {
+        await onSendFile(file);
+      } catch (error) {
+        console.error('文件发送失败:', error);
+      } finally {
+        setIsFileUploading(false);
+      }
 
       // 清空文件输入，允许重复选择同一文件
       e.target.value = '';
@@ -59,13 +74,17 @@ export default function MessageInput({ onSendMessage, disabled = false }: Messag
         <motion.button
           type="button"
           onClick={handleFileButtonClick}
-          disabled={disabled}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          disabled={disabled || isFileUploading}
+          whileHover={{ scale: disabled || isFileUploading ? 1 : 1.05 }}
+          whileTap={{ scale: disabled || isFileUploading ? 1 : 0.95 }}
           className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-gray-500 dark:bg-gray-600 text-white transition-colors hover:bg-gray-600 dark:hover:bg-gray-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed flex-shrink-0"
-          title="选择文件"
+          title={isFileUploading ? "文件上传中..." : "选择文件"}
         >
-          <AddIcon fontSize="small" />
+          {isFileUploading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          ) : (
+            <AddIcon fontSize="small" />
+          )}
         </motion.button>
 
         {/* 隐藏的文件输入 */}

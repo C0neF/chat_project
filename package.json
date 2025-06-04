@@ -17,6 +17,7 @@
     "next": "^15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "secure-file-transfer": "^0.0.8",
     "trystero": "^0.21.5"
   },
   "devDependencies": {

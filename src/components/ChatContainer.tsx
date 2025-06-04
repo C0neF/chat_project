@@ -14,12 +14,7 @@ import MessageInput from './MessageInput';
 import ThemeToggle from './ThemeToggle';
 import { WebRTCChatService, ChatMessage, PeerInfo } from '../services/webrtcChat';
 
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
+// 移除旧的Message接口，直接使用ChatMessage
 
 type ViewType = 'welcome' | 'chat';
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
@@ -37,7 +32,7 @@ export default function ChatContainer() {
   const [pendingEncryptedRoomId, setPendingEncryptedRoomId] = useState<string | null>(null);
 
   // WebRTC 聊天状态
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [peers, setPeers] = useState<PeerInfo[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -71,12 +66,7 @@ export default function ChatContainer() {
 
       // 设置事件监听器
       chatService.onMessage((message: ChatMessage) => {
-        setMessages(prev => [...prev, {
-          id: message.id,
-          content: message.content,
-          isUser: message.isUser,
-          timestamp: message.timestamp
-        }]);
+        setMessages(prev => [...prev, message]);
       });
 
       chatService.onPeerJoin((peer: PeerInfo) => {
@@ -236,6 +226,32 @@ export default function ChatContainer() {
       }
     }
   }, [connectionStatus]);
+
+  // 发送文件
+  const handleSendFile = useCallback(async (file: File) => {
+    if (chatServiceRef.current && connectionStatus !== 'disconnected') {
+      try {
+        await chatServiceRef.current.sendFileMessage(file);
+      } catch (error) {
+        console.error('文件发送失败:', error);
+        alert('文件发送失败，请重试');
+      }
+    }
+  }, [connectionStatus]);
+
+  // 下载文件
+  const handleDownloadFile = useCallback(async (magnetURI: string, fileName: string) => {
+    if (chatServiceRef.current) {
+      try {
+        await chatServiceRef.current.downloadFile(magnetURI, fileName);
+      } catch (error) {
+        console.error('文件下载失败:', error);
+        throw error;
+      }
+    }
+  }, []);
+
+
 
   // 分享房间功能（支持公开房间和加密房间）
   const handleShareRoom = useCallback(async () => {
@@ -421,11 +437,15 @@ export default function ChatContainer() {
         </div>
 
         {/* 消息列表 */}
-        <MessageList messages={messages} />
+        <MessageList
+          messages={messages}
+          onDownloadFile={handleDownloadFile}
+        />
 
         {/* 消息输入 */}
         <MessageInput
           onSendMessage={handleSendMessage}
+          onSendFile={handleSendFile}
           disabled={connectionStatus !== 'connected' || isConnecting}
         />
       </motion.div>
