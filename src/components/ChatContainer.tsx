@@ -237,7 +237,12 @@ export default function ChatContainer() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 relative">
+      {/* 主题切换按钮 - 右上角固定定位 */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle size="medium" />
+      </div>
+
       {/* 居中的聊天区域 - Bento Grid 风格 */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -265,21 +270,16 @@ export default function ChatContainer() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              {/* 主题切换按钮 */}
-              <ThemeToggle size="medium" />
-
-              {/* 关闭按钮 */}
-              <motion.button
-                onClick={handleBackToWelcome}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-[32px] h-[32px] rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                title="关闭聊天"
-              >
-                <CloseIcon fontSize="small" />
-              </motion.button>
-            </div>
+            {/* 关闭按钮 */}
+            <motion.button
+              onClick={handleBackToWelcome}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-[32px] h-[32px] rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+              title="关闭聊天"
+            >
+              <CloseIcon fontSize="small" />
+            </motion.button>
           </div>
         </div>
 
