@@ -3,10 +3,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import CloseIcon from '@mui/icons-material/Close';
+import ShareIcon from '@mui/icons-material/Share';
 import WelcomeScreen from './WelcomeScreen';
 import JoinRoomModal from './JoinRoomModal';
 import CreateRoomModal from './CreateRoomModal';
 import EncryptedRoomModal from './EncryptedRoomModal';
+import PasswordModal from './PasswordModal';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import ThemeToggle from './ThemeToggle';
@@ -29,7 +31,10 @@ export default function ChatContainer() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEncryptedModal, setShowEncryptedModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
+  const [pendingSharedRoomId, setPendingSharedRoomId] = useState<string | null>(null);
+  const [pendingEncryptedRoomId, setPendingEncryptedRoomId] = useState<string | null>(null);
 
   // WebRTC 聊天状态
   const [messages, setMessages] = useState<Message[]>([]);
@@ -161,17 +166,40 @@ export default function ChatContainer() {
     setShowJoinModal(true);
   }, []);
 
-  // 加入房间
-  const handleJoinRoom = useCallback(async (inputRoomId: string, password?: string) => {
-    setRoomId(inputRoomId);
-    setCurrentView('chat');
-    setShowJoinModal(false);
-    await initializeChatService(inputRoomId, password);
+  // 加入房间 - 新的流程
+  const handleJoinRoom = useCallback(async (inputRoomId: string) => {
+    const isPublicRoom = /^\d{6}$/.test(inputRoomId);
+    const isEncryptedRoom = /^\d{4}$/.test(inputRoomId);
+
+    if (isPublicRoom) {
+      // 公开房间直接加入
+      setRoomId(inputRoomId);
+      setCurrentView('chat');
+      setShowJoinModal(false);
+      await initializeChatService(inputRoomId);
+    } else if (isEncryptedRoom) {
+      // 加密房间显示密码弹窗
+      setShowJoinModal(false);
+      setPendingEncryptedRoomId(inputRoomId);
+      setShowPasswordModal(true);
+    }
   }, [initializeChatService]);
+
+  // 处理密码验证并加入加密房间
+  const handlePasswordSubmit = useCallback(async (password: string) => {
+    if (pendingEncryptedRoomId) {
+      setRoomId(pendingEncryptedRoomId);
+      setCurrentView('chat');
+      setShowPasswordModal(false);
+      await initializeChatService(pendingEncryptedRoomId, password);
+      setPendingEncryptedRoomId(null);
+    }
+  }, [pendingEncryptedRoomId, initializeChatService]);
 
   // 关闭加入房间弹窗
   const handleCloseJoinModal = useCallback(() => {
     setShowJoinModal(false);
+    setPendingSharedRoomId(null); // 清除预填的房间号
   }, []);
 
   // 关闭创建房间弹窗
@@ -183,6 +211,12 @@ export default function ChatContainer() {
   const handleCloseEncryptedModal = useCallback(() => {
     setShowEncryptedModal(false);
     setPendingRoomId(null);
+  }, []);
+
+  // 关闭密码弹窗
+  const handleClosePasswordModal = useCallback(() => {
+    setShowPasswordModal(false);
+    setPendingEncryptedRoomId(null);
   }, []);
 
   // 返回欢迎界面
@@ -203,6 +237,85 @@ export default function ChatContainer() {
     }
   }, [connectionStatus]);
 
+  // 分享房间功能（支持公开房间和加密房间）
+  const handleShareRoom = useCallback(async () => {
+    if (!roomId) return;
+
+    // 判断房间类型
+    const isPublicRoom = roomId.length === 6 && /^\d{6}$/.test(roomId);
+    const isEncryptedRoom = roomId.length === 4 && /^\d{4}$/.test(roomId);
+
+    if (!isPublicRoom && !isEncryptedRoom) {
+      // 如果不是有效的房间格式，不执行分享
+      return;
+    }
+
+    // 生成分享链接
+    const shareUrl = `${window.location.origin}?room=${roomId}`;
+    const roomType = isPublicRoom ? '公开' : '加密';
+    const shareText = `加入我的${roomType}聊天房间 #${roomId}${isEncryptedRoom ? '（需要密码）' : ''}`;
+
+    try {
+      // 优先使用 Web Share API（移动端友好）
+      if (navigator.share) {
+        await navigator.share({
+          title: '聊天房间分享',
+          text: shareText,
+          url: shareUrl,
+        });
+      } else {
+        // 降级到复制到剪贴板
+        await navigator.clipboard.writeText(shareUrl);
+
+        // 显示复制成功提示
+        const successMessage = isEncryptedRoom
+          ? '加密房间链接已复制到剪贴板！\n注意：接收者需要输入密码才能加入。'
+          : '房间链接已复制到剪贴板！';
+        alert(successMessage);
+      }
+    } catch (error) {
+      console.error('分享失败:', error);
+
+      // 如果所有方法都失败，提供手动复制的方式
+      const fallbackText = `请手动复制此链接分享房间：\n${shareUrl}`;
+      alert(fallbackText);
+    }
+  }, [roomId]);
+
+  // 判断房间类型
+  const isPublicRoom = roomId ? roomId.length === 6 && /^\d{6}$/.test(roomId) : false;
+  const isEncryptedRoom = roomId ? roomId.length === 4 && /^\d{4}$/.test(roomId) : false;
+  const canShareRoom = isPublicRoom || isEncryptedRoom;
+
+  // 处理 URL 参数，自动加入分享的房间
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedRoomId = urlParams.get('room');
+
+      if (sharedRoomId && currentView === 'welcome') {
+        // 验证房间号格式
+        const isValidPublicRoom = /^\d{6}$/.test(sharedRoomId);
+        const isValidEncryptedRoom = /^\d{4}$/.test(sharedRoomId);
+
+        if (isValidPublicRoom) {
+          // 自动加入分享的公开房间
+          handleJoinRoom(sharedRoomId);
+
+          // 清除 URL 参数，避免重复加入
+          window.history.replaceState({}, '', window.location.pathname);
+        } else if (isValidEncryptedRoom) {
+          // 对于加密房间，直接显示密码弹窗
+          setPendingEncryptedRoomId(sharedRoomId);
+          setShowPasswordModal(true);
+
+          // 清除 URL 参数，避免重复处理
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }
+    }
+  }, [currentView, handleJoinRoom]);
+
   // 根据当前视图渲染不同界面
   if (currentView === 'welcome') {
     return (
@@ -215,6 +328,7 @@ export default function ChatContainer() {
           isOpen={showJoinModal}
           onClose={handleCloseJoinModal}
           onJoin={handleJoinRoom}
+          prefilledRoomId={pendingSharedRoomId || undefined}
         />
 
         {/* 创建房间类型选择弹窗 */}
@@ -231,6 +345,14 @@ export default function ChatContainer() {
           onClose={handleCloseEncryptedModal}
           onCreateRoom={handleCreateEncryptedRoomWithPassword}
           roomId={pendingRoomId || undefined}
+        />
+
+        {/* 密码验证弹窗 */}
+        <PasswordModal
+          isOpen={showPasswordModal}
+          onClose={handleClosePasswordModal}
+          onSubmit={handlePasswordSubmit}
+          roomId={pendingEncryptedRoomId || ''}
         />
       </>
     );
@@ -270,16 +392,31 @@ export default function ChatContainer() {
                 </p>
               </div>
             </div>
-            {/* 关闭按钮 */}
-            <motion.button
-              onClick={handleBackToWelcome}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-[32px] h-[32px] rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-              title="关闭聊天"
-            >
-              <CloseIcon fontSize="small" />
-            </motion.button>
+            <div className="flex items-center space-x-2">
+              {/* 分享按钮 - 对公开房间和加密房间都显示 */}
+              {canShareRoom && (
+                <motion.button
+                  onClick={handleShareRoom}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-[32px] h-[32px] rounded-full flex items-center justify-center hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                  title="分享房间"
+                >
+                  <ShareIcon fontSize="small" />
+                </motion.button>
+              )}
+
+              {/* 关闭按钮 */}
+              <motion.button
+                onClick={handleBackToWelcome}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-[32px] h-[32px] rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                title="关闭聊天"
+              >
+                <CloseIcon fontSize="small" />
+              </motion.button>
+            </div>
           </div>
         </div>
 

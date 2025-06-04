@@ -1,24 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CloseIcon from '@mui/icons-material/Close';
 import LoginIcon from '@mui/icons-material/Login';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import InfoIcon from '@mui/icons-material/Info';
 
 interface JoinRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onJoin: (roomId: string, password?: string) => void;
+  onJoin: (roomId: string) => void; // 移除密码参数，只传递房间号
+  prefilledRoomId?: string; // 预填的房间号
 }
 
-export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModalProps) {
+export default function JoinRoomModal({ isOpen, onClose, onJoin, prefilledRoomId }: JoinRoomModalProps) {
   const [roomId, setRoomId] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+
+  // 处理预填房间号
+  useEffect(() => {
+    if (prefilledRoomId && isOpen) {
+      setRoomId(prefilledRoomId);
+      setError('');
+    }
+  }, [prefilledRoomId, isOpen]);
 
   // 根据房间号位数判断是否为加密房间
   const isEncryptedRoom = roomId.trim().length === 4 && /^\d{4}$/.test(roomId.trim());
@@ -39,23 +44,14 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
       return;
     }
 
-    // 如果是加密房间但没有输入密码
-    if (isEncryptedRoom && !password.trim()) {
-      setError('加密房间需要输入密码');
-      return;
-    }
-
-    // 传递房间号和密码（如果是加密房间的话）
-    onJoin(roomId.trim(), isEncryptedRoom ? password.trim() : undefined);
+    // 直接传递房间号，让父组件处理加密房间的密码验证
+    onJoin(roomId.trim());
     setRoomId('');
-    setPassword('');
     setError('');
   };
 
   const handleClose = () => {
     setRoomId('');
-    setPassword('');
-    setShowPassword(false);
     setError('');
     onClose();
   };
@@ -143,42 +139,7 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
                   </div>
                 )}
 
-                {/* 密码输入（仅在检测到加密房间时显示） */}
-                {isEncryptedRoom && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mb-6"
-                  >
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      房间密码
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          setError('');
-                        }}
-                        placeholder="请输入房间密码"
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition-colors"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      >
-                        {showPassword ? (
-                          <VisibilityOffIcon fontSize="small" />
-                        ) : (
-                          <VisibilityIcon fontSize="small" />
-                        )}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
+
 
                 {/* 提示信息 */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 mb-6">
